@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro Timer - Focus & Productivity</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+        <div class="container">
+        <!-- Header Section -->
+        <header class="header">
+            <h1 class="logo">
+                <span class="logo-icon">🍅</span>
+                Pomodoro Timer
+            </h1>
+            <p class="tagline">Focus. Work. Rest. Repeat.</p>
+        </header>
+
+        <!-- Timer Display -->
+        <div class="timer-container">
+            <div class="timer-ring">
+                <!-- SVG for cprogress -->
+                <svg class="progress-ring" width="300" height="300">
+                    <circle class="progress-ring__background" cx="150" cy="150" r="140"></circle>
+                    <circle class="progress-ring__circle" cx="150" cy="150" r="140"></circle>
+                </svg>
+                <div class="timer-display">
+                    <div class="timer-time" id="timerDisplay">25:00</div>
+                    <div class="timer-label" id="timerLabel">Focus Time</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Session Tabs -->
+        <div class="session-tabs">
+            <button class="tab-btn active" data-mode="pomodoro">
+                <span class="tab-icon">💼</span>
+                <span class="tab-text">Pomodoro</span>
+                <span class="tab-time">25 min</span>
+            </button>
+            <button class="tab-btn" data-mode="shortBreak">
+                <span class="tab-icon">☕</span>
+                <span class="tab-text">Short Break</span>
+                <span class="tab-time">5 min</span>
+            </button>
+            <button class="tab-btn" data-mode="longBreak">
+                <span class="tab-icon">🌴</span>
+                <span class="tab-text">Long Break</span>
+                <span class="tab-time">15 min</span>
+            </button>
+        </div>
+
+                <!-- Control Buttons -->
+        <div class="controls">
+            <button class="control-btn" id="startBtn">
+                <span class="btn-icon">▶</span>
+                <span class="btn-text">Start</span>
+            </button>
+            <button class="control-btn pause-btn hidden" id="pauseBtn">
+                <span class="btn-icon">⏸</span>
+                <span class="btn-text">Pause</span>
+            </button>
+            <button class="control-btn reset-btn" id="resetBtn">
+                <span class="btn-icon">↻</span>
+                <span class="btn-text">Reset</span>
+            </button>
+        </div>
+
+        <!-- Settings Modal -->
+        <div class="modal-overlay hidden" id="settingsModal">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2>Timer Settings</h2>
+                    <button class="modal-close" id="closeModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="setting-group">
+                        <label for="pomodoroTime">Pomodoro Duration (minutes)</label>
+                        <input type="number" id="pomodoroTime" min="1" max="60" value="25">
+                    </div>
+                    <!-- More settings... -->
+                </div>
+            </div>
+        </div>
+</body>
+</html>
