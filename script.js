@@ -123,3 +123,51 @@ function switchMode(mode) {
         updateProgress();
     }
 }
+
+
+function playNotification() {
+    if (!settings.soundEnabled) return;
+    
+    // Create a simple notification sound using Web Audio API
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    // Connect nodes
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    // Configure sound
+    oscillator.frequency.value = 800; // Hz
+    oscillator.type = 'sine';
+    
+    // Fade out effect
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+    
+    // Play sound
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.5);
+}
+
+function showNotification() {
+    // Visual browser notification
+    if ('Notification' in window && Notification.permission === 'granted') {
+        const notification = new Notification('Pomodoro Timer', {
+            body: timer.mode === 'pomodoro' ? 'Time for a break!' : 'Ready to focus!',
+            icon: '🍅',
+            badge: '🍅'
+        });
+        
+        // Auto-close after 5 seconds
+        setTimeout(() => notification.close(), 5000);
+    }
+    
+    // Visual feedback with glow animation
+    document.querySelector('.timer-ring').style.animation = 'glow 1s ease-in-out 3';
+}
+
+// Request notification permission on load
+if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+}
