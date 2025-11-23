@@ -1,5 +1,5 @@
-// timer state
 
+// Timer state
 let timer = {
     minutes: 25,
     seconds: 0,
@@ -18,24 +18,22 @@ let settings = {
     soundEnabled: true
 };
 
-
-//cache DOM
+// Cache DOM
 const timerDisplay = document.getElementById('timerDisplay');
 const timerLabel = document.getElementById('timerLabel');
 const startBtn = document.getElementById('startBtn');
 const pauseBtn = document.getElementById('pauseBtn');
 const resetBtn = document.getElementById('resetBtn');
-const progressCircle = document.querySelector('.progress-ring__circle');
+const progressCircle = document.getElementById('progressCircle');
+const timerRing = document.getElementById('timerRing');
+const sessionsCount = document.getElementById('sessionsCount');
+const tabBtns = document.querySelectorAll('.tab-btn');
 
-// radius and circumference
-/** 
- * SVG Animation Logic for progress
- */
-const radius = progressCircle.releasePointerCapture.baseVal.value;
+// SVG Progress Ring Setup
+const radius = 140;
 const circumference = radius * 2 * Math.PI;
 
-// init progress ring
-progressCircle.style.stokeDasharray = `${circumference} ${circumference}`;
+progressCircle.style.strokeDasharray = `${circumference} ${circumference}`;
 progressCircle.style.strokeDashoffset = circumference;
 
 function updateProgress() {
@@ -43,28 +41,28 @@ function updateProgress() {
     const currentSeconds = timer.minutes * 60 + timer.seconds;
     const progress = 1 - (currentSeconds / totalSeconds);
 
-    // uodate stroke offset
     const offset = circumference - (progress * circumference);
-    progressCircle.style.strokeDashoffset = offset; 
+    progressCircle.style.strokeDashoffset = offset;
 }
 
-// Timer Core functions
+function updateDisplay() {
+    const minutes = timer.minutes.toString().padStart(2, '0');
+    const seconds = timer.seconds.toString().padStart(2, '0');
+
+    timerDisplay.textContent = `${minutes}:${seconds}`;
+    document.title = `${minutes}:${seconds} - Pomodoro`;
+}
 
 function startTimer() {
-    if (timer.isRunning)return;
+    if (timer.isRunning) return;
     
     timer.isRunning = true;
     timer.isPaused = false;
 
-    //UI update
     startBtn.classList.add('hidden');
     pauseBtn.classList.remove('hidden');
+    timerRing.classList.add('active');
 
-    // add pulse annimation during active timer
-    document.querySelector('.timer-ring').style.animation = 'pulse 2s ease-in-out infinit';
-    
-
-    //start interval
     timer.interval = setInterval(() => {
         if (timer.seconds === 0) {
             if (timer.minutes === 0) {
@@ -81,13 +79,68 @@ function startTimer() {
     }, 1000);
 }
 
-function updateDisplay() {
-    // format with zeros
-    const minutes = timer.minutes.toString().padStart(2, '0');
-    const seconds = timer.seconds.toString().padStart(2, '0');
+function pauseTimer() {
+    if (!timer.isRunning) return;
 
-    timerDisplay.textContent = `${minutes} : ${seconds}`;
-    document.title = `${minutes} : ${seconds} - Pomodoro`;
+    timer.isRunning = false;
+    timer.isPaused = true;
+
+    clearInterval(timer.interval);
+
+    startBtn.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
+    timerRing.classList.remove('active');
+}
+
+function resetTimer() {
+    timer.isRunning = false;
+    timer.isPaused = false;
+
+    clearInterval(timer.interval);
+
+    timer.minutes = settings[timer.mode];
+    timer.seconds = 0;
+
+    startBtn.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
+    timerRing.classList.remove('active');
+
+    updateDisplay();
+    updateProgress();
+}
+
+function completeSession() {
+    clearInterval(timer.interval);
+    timer.isRunning = false;
+
+    if (timer.mode === 'pomodoro') {
+        timer.sessionsCompleted++;
+        sessionsCount.textContent = timer.sessionsCompleted;
+
+        // Auto switch to break
+        if (timer.sessionsCompleted % 4 === 0) {
+            switchMode('longBreak');
+        } else {
+            switchMode('shortBreak');
+        }
+    } else {
+        switchMode('pomodoro');
+    }
+
+    // Play sound
+    playNotificationSound();
+
+    // Show notification
+    if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('Pomodoro Timer', {
+            body: timer.mode === 'pomodoro' ? 'Time for a break!' : 'Time to focus!',
+            icon: '🍅'
+        });
+    }
+
+    startBtn.classList.remove('hidden');
+    pauseBtn.classList.add('hidden');
+    timerRing.classList.remove('active');
 }
 
 function switchMode(mode) {
@@ -95,27 +148,24 @@ function switchMode(mode) {
     timer.minutes = settings[mode];
     timer.seconds = 0;
 
-    // update active tab
-    tabBtn.forEach(btn => {
+    tabBtns.forEach(btn => {
         btn.classList.toggle('active', btn.dataset.mode === mode);
     });
 
-    //update labels
     const labels = {
         pomodoro: 'Focus Time',
         shortBreak: 'Short Break',
-        longBreak: "Long Break"
+        longBreak: 'Long Break'
     };
     timerLabel.textContent = labels[mode];
 
-    // change colors
     const colors = {
         pomodoro: '#FF6B6B',
         shortBreak: '#4ECDC4',
         longBreak: '#45B7D1'
     };
-    progressCircle.style.stroke = colors[mode]
-    
+    progressCircle.style.stroke = colors[mode];
+
     if (timer.isRunning) {
         resetTimer();
     } else {
@@ -124,50 +174,42 @@ function switchMode(mode) {
     }
 }
 
-
-function playNotification() {
-    if (!settings.soundEnabled) return;
-    
-    // Create a simple notification sound using Web Audio API
+function playNotificationSound() {
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
-    
-    // Connect nodes
+
     oscillator.connect(gainNode);
     gainNode.connect(audioContext.destination);
-    
-    // Configure sound
-    oscillator.frequency.value = 800; // Hz
+
+    oscillator.frequency.value = 800;
     oscillator.type = 'sine';
-    
-    // Fade out effect
+
     gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-    
-    // Play sound
+
     oscillator.start(audioContext.currentTime);
     oscillator.stop(audioContext.currentTime + 0.5);
 }
 
-function showNotification() {
-    // Visual browser notification
-    if ('Notification' in window && Notification.permission === 'granted') {
-        const notification = new Notification('Pomodoro Timer', {
-            body: timer.mode === 'pomodoro' ? 'Time for a break!' : 'Ready to focus!',
-            icon: '🍅',
-            badge: '🍅'
-        });
-        
-        // Auto-close after 5 seconds
-        setTimeout(() => notification.close(), 5000);
-    }
-    
-    // Visual feedback with glow animation
-    document.querySelector('.timer-ring').style.animation = 'glow 1s ease-in-out 3';
-}
+// Event Listeners
+startBtn.addEventListener('click', startTimer);
+pauseBtn.addEventListener('click', pauseTimer);
+resetBtn.addEventListener('click', resetTimer);
 
-// Request notification permission on load
+tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        if (!timer.isRunning) {
+            switchMode(btn.dataset.mode);
+        }
+    });
+});
+
+// Request notification permission
 if ('Notification' in window && Notification.permission === 'default') {
     Notification.requestPermission();
 }
+
+// Initialize
+updateDisplay();
+updateProgress();
